@@ -1,0 +1,40 @@
+name: Infra & Security Pipeline
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+      - 'staging'
+      - 'production'
+
+jobs:
+  # Scan files
+  config-check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Checking infrastructure configuration syntax..."
+
+  # Step 2: Security scan - runs always, but only after the first check passes
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: config-check
+    steps:
+      - run: echo "Running vulnerability scanner on configurations..."
+      - run: echo "Scanning branch ${{ github.ref_name }}..."
+
+  # Step 3: Deployment to staging environment - runs only on the staging branch
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: github.ref == 'refs/heads/staging'
+    steps:
+      - run: echo "Deploying configurations to the STAGING servers"
+
+  # Step 4: Deployment to production environment - runs only on the production branch
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: github.ref == 'refs/heads/production'
+    steps:
+      - run: echo "Deploying configurations to the PRODUCTION servers!"
+      - run: echo "Sending alert to IT/SOC team..."
